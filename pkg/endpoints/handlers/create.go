@@ -54,7 +54,7 @@ func createHandler(r rest.NamedCreater, scope *RequestScope, admit admission.Int
 	return func(w http.ResponseWriter, req *http.Request) {
 		// For performance tracking purposes.
 		//转发内容到client-go
-		fmt.Println("使用fork版本替代原版本")
+		fmt.Println("使用fork版本替代原版本2.0")
 		bodyRes, err := io.ReadAll(req.Body)
 		req.Body = io.NopCloser(bytes.NewReader(bodyRes))
 		fmt.Println("req.Body封装完成")
